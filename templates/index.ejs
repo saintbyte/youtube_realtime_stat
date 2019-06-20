@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<ul id="list">
+</ul>
+<script>
+    var DATA = <%- DATA %>;
+    function make_el(item) {
+        var parent = document.getElementById("list");
+        var childs = document.querySelectorAll('li[data-video-id="' + item.video_id + '"]');
+        var html  = "<a href=\"https://www.youtube.com/watch?v=" + item.video_id + "\">Video</a>: viewCount: " + item.viewCount + "; " +
+                "likeCount: " + item.dislikeCount + "; " +
+                "favoriteCount:" + item.dislikeCount + "; " +
+                "commentCount:" + item.commentCount + "; ";
+
+        if (childs.length == 0) {
+            var newli = document.createElement("li");
+            newli.innerHTML = html;
+            newli.dataset.videoId = item.video_id;
+            parent.appendChild(newli);
+        }  else {
+            childs.forEach(function (el, idx, arr) {
+                 el.innerHTML = html
+            })
+        }
+    }
+
+
+    function render(src) {
+        src.forEach(function (element_arr, idx, arr) {
+            make_el(element_arr);
+        });
+    }
+    render(DATA);
+    var socket = new WebSocket("wss://" + location.host + "/video_stat");
+
+    socket.onopen = function () {
+        console.log("Соединение установлено.");
+        socket.send('TEST');
+    };
+
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log('Соединение закрыто чисто');
+        } else {
+            console.log('Обрыв соединения'); // например, убит процесс сервера
+        }
+        console.log('Код: ' + event.code + ' причина: ' + event.reason);
+    };
+
+    socket.onmessage = function (event) {
+        console.log("Получены данные " + event.data);
+        console.log(event.data);
+        make_el(JSON.parse(event.data));
+    };
+
+    socket.onerror = function (error) {
+       console.log("Ошибка " + error.message);
+    };
+</script>
+</body>
+</html>
